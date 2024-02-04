@@ -266,7 +266,10 @@ function renderSchedule({
   };
 
   for (const aDay of range) {
-    const scheduledTasks = schedule[aDay.format("YYYY-MM-DD")].data;
+    const scheduledTasksNode = schedule[aDay.format("YYYY-MM-DD")];
+    if (!scheduledTasksNode) continue;
+
+    const scheduledTasks = scheduledTasksNode.data;
     const projectTree = createTreeFromProjectTasks(scheduledTasks);
 
     note.body += renderSectionTitle(projectTree, aDay, range);

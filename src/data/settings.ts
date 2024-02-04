@@ -64,7 +64,7 @@ export const options = {
   currentFolderID: {
     label: "Current Folder ID",
     description: "",
-    value: "pluginsagendacurrentfolder",
+    value: "",
     type: SettingItemType.String,
     public: true,
     section: sectionName,

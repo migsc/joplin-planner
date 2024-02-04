@@ -7,6 +7,9 @@ export default async function main() {
   console.debug(`${main.name}: Registering commands...`);
   await joplin.commands.register(command);
   console.debug(`${main.name}: Commands registered`);
+  await loadAgenda().then((agenda) => {
+    console.debug(`${main.name}: Agenda loaded`, agenda);
+  });
 }
 
 joplin.workspace.onNoteChange(
