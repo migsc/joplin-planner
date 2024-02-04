@@ -26,8 +26,8 @@ Notes you create in the Current folder's Projects folder can be tagged with the 
 - a month name: january, jan, february, etc
 - or a date that is parseable by dayjs: january 1st 2025, 02/22/2024, etc.
 
-When these note are created and tagged, the notes in the Upcoming folder will be automatically recreated with embedded todo lists that represent your "tree" of tasks taken from projects/folders and tasks/notes scheduled for each day.
+When these notes are created and tagged, the notes in the Upcoming folder will be automatically recreated with embedded todo lists that represent your "tree" of tasks taken from projects/folders and tasks/notes scheduled for each day.
 
-Right now that's it. It is recommended that each week your move the "This Week" note generated in the Current folder into the Past folder. Then make changes or force a change in the Current Projects folder to trigger the current and upcoming notes to be recreated. In the future this archiving process will be more automatic.
+Right now that's it. It is recommended that each week you move the "This Week" note generated in the Current folder into the Past folder. Then make changes or force a change in the Current Projects folder to trigger the current and upcoming notes to be recreated. In the future this archiving process will be more automatic.
 
 The Projects folder in the Past folder is also meant for archiving old projects. The Projects folder in the Upcoming folder is meant for creating and planning projects you might not want to take on yet. Neither of these folders are watched for changes and have todos generated off of them. Only the Current Projects folder is observed.
