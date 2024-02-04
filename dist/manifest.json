@@ -1,0 +1,15 @@
+{
+  "manifest_version": 1,
+  "id": "com.chateloin.joplin-agenda",
+  "app_min_version": "2.13",
+  "version": "1.0.0",
+  "name": "Agenda",
+  "description": "A way to manage folders and notes as an agenda with recurring TODOs",
+  "author": "migs",
+  "homepage_url": "",
+  "repository_url": "",
+  "keywords": [],
+  "categories": [],
+  "screenshots": [],
+  "icons": {}
+}

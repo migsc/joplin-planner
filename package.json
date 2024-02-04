@@ -1,0 +1,52 @@
+{
+  "name": "joplin-plugin-planner",
+  "version": "0.1.0",
+  "scripts": {
+    "dist": "webpack --env joplin-plugin-config=buildMain && webpack --env joplin-plugin-config=buildExtraScripts && webpack --env joplin-plugin-config=createArchive",
+    "start-mac": "npm run dist && /Applications/Joplin.app/Contents/MacOS/Joplin --env dev",
+    "start-win": "npm run dist &&  cd /mnt/c/Users/migue && cmd.exe /C \"C:\\Users\\migue\\AppData\\Local\\Programs\\Joplin\\Joplin.exe --env dev\"",
+    "prepare": "npm run dist",
+    "updateVersion": "webpack --env joplin-plugin-config=updateVersion",
+    "update": "npm install -g generator-joplin && yo joplin --node-package-manager npm --update --force",
+    "test": "jest",
+    "deps-image": "madge --image graph.svg --ts-config tsconfig.madge.json src/index.ts && open graph.svg",
+    "deps-dot": "madge --ts-config tsconfig.madge.json --dot src/index.ts > graph.dot"
+  },
+  "license": "MIT",
+  "keywords": [
+    "joplin-plugin"
+  ],
+  "files": [
+    "publish"
+  ],
+  "devDependencies": {
+    "@joplin/lib": "~2.9",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^18.7.13",
+    "chalk": "^4.1.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "fs-extra": "^10.1.0",
+    "glob": "^8.0.3",
+    "jest": "^29.7.0",
+    "madge": "5.0.1",
+    "tar": "^6.1.11",
+    "ts-jest": "^29.1.1",
+    "ts-loader": "^9.3.1",
+    "typescript": "^4.8.2",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "dayjs": "^1.11.10",
+    "lodash": "^4.17.21",
+    "node-fetch": "^3.3.2"
+  },
+  "madge": {
+    "graphVizOptions": {
+      "G": {
+        "rankdir": "TB"
+      }
+    }
+  }
+}
