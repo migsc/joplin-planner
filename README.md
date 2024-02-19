@@ -1,6 +1,6 @@
 # Joplin Planner
 
-This plugin is still heavily in development. It's not very intuitive in its current state. Hopefully soon I'll release a version 1 that is more polished.
+This plugin is still heavily in development. It's very buggy in its current state. Hopefully soon I'll release a version 1 that is more polished.
 
 Currently the way this plugin works is that it generates the following folder structure in your folders root
 
@@ -23,10 +23,19 @@ Notes you create in the Current folder's Projects folder can be tagged with the 
 
 - a frequency: daily, weekly, monthly, yearly
 - a day of the week: monday, mon, tuesday, etc
-- a month name: january, jan, february, etc
-- or a date that is parseable by dayjs: january 1st 2025, 02/22/2024, etc.
 
 When these notes are created and tagged, the notes in the Upcoming folder will be automatically recreated with embedded todo lists that represent your "tree" of tasks taken from projects/folders and tasks/notes scheduled for each day.
+
+Additionally you can schedule tasks for specific dates by writing this in the body of your note.
+
+```
+@due 06/15/2025
+
+```
+
+A newline is required after the date you write and the date can be anything that [dayjs](https://day.js.org/) can parse.
+
+If you combine the `@due` syntax and the frequency/weekday tags, the due date will be taken to be the first occurrence of the task and will repeat in accordance with the specified frequency.
 
 Right now that's it. It is recommended that each week you move the "This Week" note generated in the Current folder into the Past folder. Then make changes or force a change in the Current Projects folder to trigger the current and upcoming notes to be recreated. In the future this archiving process will be more automatic.
 

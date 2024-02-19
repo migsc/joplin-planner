@@ -2,7 +2,7 @@
 	"manifest_version": 1,
 	"id": "com.chateloin.joplin-planner",
 	"app_min_version": "2.13",
-	"version": "0.1.2",
+	"version": "0.2.1",
 	"name": "Planner",
 	"description": "A plugin that helps with managing embedded todo lists in notes, and parses note tags to schedule recurring items.",
 	"author": "Miguel Chateloin",
@@ -12,6 +12,6 @@
 	"categories": [],
 	"screenshots": [],
 	"icons": {},
-	"_publish_hash": "sha256:9f84818884ebab0a316c67cdcac3a5edf23bae9dff850abb1898899eba432da1",
-	"_publish_commit": "main:1af5a0dd62024c67939d9942f04d5c83355ec7b3"
+	"_publish_hash": "sha256:350f0d5f8d206de97ab5900a680949f70d15b440b1af606c1a28fa6f879dfb62",
+	"_publish_commit": "main:010e78c5368113dca901536fa42ec5376fc24674"
 }

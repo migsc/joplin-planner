@@ -12,39 +12,62 @@ const folderBySettings = {
     opts?: { notes?: boolean; folders?: boolean; tags?: boolean }
   ): Promise<Folder> {
     try {
-      console.log(`data.folders.getOrCreateByKey:${settingsKey} Attempting to query folder for key with opts ${JSON.stringify(opts ?? {})}`);
+      console.log(
+        `data.folders.getOrCreateByKey:${settingsKey} Attempting to query folder for key with opts ${JSON.stringify(
+          opts ?? {}
+        )}`
+      );
       const folderData = await this.getByKey(settingsKey, opts);
-      console.log(`data.folders.getOrCreateByKey:${settingsKey} Got folder data with:`, folderData);
+      console.log(
+        `data.folders.getOrCreateByKey:${settingsKey} Got folder data with:`,
+        folderData
+      );
       return folderData;
     } catch (err) {
-      console.error(`data.folders.getOrCreateByKey:${settingsKey}`, err)
+      console.error(`data.folders.getOrCreateByKey:${settingsKey}`, err);
       if ((err.message as string).toLowerCase().includes("not found")) {
-        const payload = bodyCallback()
-        console.log(`data.folders.getOrCreateByKey:${settingsKey} Folder not found. Attempting to create it with payload:`, payload);
+        const payload = bodyCallback();
+        console.log(
+          `data.folders.getOrCreateByKey:${settingsKey} Folder not found. Attempting to create it with payload:`,
+          payload
+        );
         const folderData = await folders.create(payload);
-        console.log(`data.folders.getOrCreateByKey:${settingsKey} Updating setting value with folder ID: `, folderData.id)
+        console.log(
+          `data.folders.getOrCreateByKey:${settingsKey} Updating setting value with folder ID: `,
+          folderData.id
+        );
         await settings.update(settingsKey, folderData.id);
         return folderData;
       } else {
-        console.error(`data.folders.getOrCreateByKey:${settingsKey} Don't know how to handle this error`)
+        console.error(
+          `data.folders.getOrCreateByKey:${settingsKey} Don't know how to handle this error`
+        );
       }
-
     }
   },
   async getByKey(
     settingsKey: settings.SettingsKey,
     opts?: { notes?: boolean; folders?: boolean; tags?: boolean }
   ): Promise<Folder> {
-    console.log(`data.folders.getByKey:${settingsKey} Query the settings key to get its value...`);
+    console.log(
+      `data.folders.getByKey:${settingsKey} Query the settings key to get its value...`
+    );
     const id = await settings.get(settingsKey);
     if (!id) {
-      throw new Error(`data.folders.getByKey:${settingsKey} Not found. No value exists for settings key`)
+      throw new Error(
+        `data.folders.getByKey:${settingsKey} Not found. No value exists for settings key`
+      );
     }
     console.log(`data.folders.getByKey:${settingsKey} Found value: ${id}`);
 
-    console.log(`data.folders.getByKey:${settingsKey} Attempting to query folder by id: ${id}`);
+    console.log(
+      `data.folders.getByKey:${settingsKey} Attempting to query folder by id: ${id}`
+    );
     const folderData = await foldersWithNotes.get(id, opts);
-    console.log(`data.folders.getByKey:${settingsKey} Found folder data with:`, folderData);
+    console.log(
+      `data.folders.getByKey:${settingsKey} Found folder data with:`,
+      folderData
+    );
 
     return folderData;
   },
@@ -58,7 +81,7 @@ const foldersWithNotes = {
     let folderData;
     // try {
     folderData = await folders.get(folderID);
-    console.log(`data.folders.get:${folderID} Got result:`, folderData)
+    console.log(`data.folders.get:${folderID} Got result:`, folderData);
     // } catch (err) {
     //   console.error(`foldersWithNotes.get:${folderID} Error getting folder:`, err);
     // }
@@ -133,10 +156,16 @@ const noteBySettings = {
       const noteData = await noteBySettings.getByKey(settingsKey, opts);
       return noteData;
     } catch (err) {
-      const payload = bodyCallback()
-      console.log(`data.notes.getByKey:${settingsKey}: Note not found. Attempting to create it with payload:`, payload);
+      const payload = bodyCallback();
+      console.log(
+        `data.notes.getByKey:${settingsKey}: Note not found. Attempting to create it with payload:`,
+        payload
+      );
       const noteData = await notes.create(payload);
-      console.log(`data.notes.getByKey:${settingsKey}: Updating settings value with note ID: `, noteData.id)
+      console.log(
+        `data.notes.getByKey:${settingsKey}: Updating settings value with note ID: `,
+        noteData.id
+      );
       await settings.update(settingsKey, noteData.id);
       return noteData;
     }
@@ -145,11 +174,16 @@ const noteBySettings = {
     settingsKey: settings.SettingsKey,
     opts?: { tags?: boolean }
   ): Promise<Note> {
-    console.log(`data.notes.getByKey: Quering id value with settings key: ${settingsKey}`);
+    console.log(
+      `data.notes.getByKey: Quering id value with settings key: ${settingsKey}`
+    );
     const id = await settings.get(settingsKey);
     console.log(`data.notes.getByKey:${id} Attempting to query note`);
     const noteData = await notesWithTags.get(id, opts);
-    console.log(`data.notes.getByKey:${id} Found note with:`, { settingsKey, id });
+    console.log(`data.notes.getByKey:${id} Found note with:`, {
+      settingsKey,
+      id,
+    });
     return noteData;
   },
 };
@@ -169,9 +203,17 @@ const notesWithTags = {
     folderID: string,
     opts?: { tags?: boolean }
   ): Promise<Page<Note>> {
-    console.log(`data.notes.getAll:${folderID} Querying notes in folder with options ${JSON.stringify(opts ?? {})}`)
+    console.log(
+      `data.notes.getAll:${folderID} Querying notes in folder with options ${JSON.stringify(
+        opts ?? {}
+      )}`
+    );
     const notesData = await notes.getAll(folderID);
-    console.log(`data.notes.getAll:${folderID} Founds notes in folder with options ${JSON.stringify(opts ?? {})}`)
+    console.log(
+      `data.notes.getAll:${folderID} Founds notes in folder with options ${JSON.stringify(
+        opts ?? {}
+      )}`
+    );
 
     if (!opts?.tags) return notesData;
 

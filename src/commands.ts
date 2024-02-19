@@ -12,7 +12,7 @@ import { Project, createSchedule } from "./agenda/models";
 import { Frequency } from "./agenda/models/projects/tag-dicts";
 import { Task } from "./agenda/models/projects/tasks";
 import { Day, DayRange, day, makeDayRange } from "./calendar";
-import { Note } from "./data";
+import data, { Note } from "./data";
 
 export const command = {
   name: "generateSchedule",
@@ -23,6 +23,8 @@ export const command = {
 
 async function execute(agenda: Agenda) {
   const projects = await loadCurrentProjects();
+  const firstDayOfWeek = await data.settings.get("firstDayOfWeek");
+  const today = day().startOf("day");
 
   console.log(`${command.name}: `, projects);
   let currDay = day().startOf("day"),
@@ -31,8 +33,8 @@ async function execute(agenda: Agenda) {
   const thisWeekScheduleParams = {
     folderID: agenda.current.folder.id,
     projects,
-    start: currDay.startOf("isoWeek"),
-    end: (cursor = currDay.endOf("isoWeek")),
+    start: currDay.startOf("week"),
+    end: (cursor = currDay.endOf("week")),
     renderTitle: (range: DayRange) =>
       `This Week (${range.start.format("MMM Do")} - ${range.end.format(
         "MMM Do"
@@ -53,7 +55,7 @@ async function execute(agenda: Agenda) {
       folderID: agenda.upcoming.folder.id,
       projects,
       start: cursor.add(1, "day"),
-      end: (cursor = cursor.add(1, "day").endOf("isoWeek")),
+      end: (cursor = cursor.add(1, "day").endOf("week")),
       renderTitle: (range: DayRange) =>
         `Next Week (${range.start.format("MMM Do")} - ${range.end.format(
           "MMM Do"
@@ -69,26 +71,44 @@ async function execute(agenda: Agenda) {
       projects,
       start: cursor.add(1, "day"),
       end: (cursor = cursor.add(1, "day").endOf("month")),
-      renderTitle: (range: DayRange) =>
-        `This Month (${range.start.format("MMM Do")} - ${range.end.format(
+      renderTitle: (range: DayRange) => {
+        let prefix;
+        if (today.month() === range.start.month()) {
+          prefix = "This Month";
+        } else {
+          prefix = "Next Month";
+        }
+
+        return `${prefix} (${range.start.format("MMM Do")} - ${range.end.format(
           "Do, YYYY"
-        )})`,
+        )})`;
+      },
     }),
   });
 
-  addMutation({
-    type: "create",
-    resource: "notes",
-    data: renderSchedule({
-      folderID: agenda.upcoming.folder.id,
-      projects,
-      start: cursor.add(1, "day"),
-      end: (cursor = cursor.add(1, "day").endOf("month")),
-      renderTitle: (range: DayRange) =>
-        `Next Month (${range.start.format("MMM YYYY")})`,
-      ...makeRenderersWithout(["daily"]),
-    }),
-  });
+  if (today.month() === cursor.month()) {
+    addMutation({
+      type: "create",
+      resource: "notes",
+      data: renderSchedule({
+        folderID: agenda.upcoming.folder.id,
+        projects,
+        start: cursor.add(1, "day"),
+        end: (cursor = cursor.add(1, "day").endOf("month")),
+        renderTitle: (range: DayRange) => {
+          let prefix;
+          if (today.month() === range.start.month() - 1) {
+            prefix = "Next Month";
+          } else {
+            prefix = "Next Month";
+          }
+
+          return `Next Month (${range.start.format("MMM YYYY")})`;
+        },
+        ...makeRenderersWithout(["daily"]),
+      }),
+    });
+  }
 
   addMutation({
     type: "create",
@@ -208,7 +228,11 @@ type ScheduleRenderParams = {
 function makeRenderersWithout(freqTags: Frequency[] = []) {
   function filterTree(tree: ProjectTaskTree) {
     return filterProjectTree(tree, (task) => {
-      const { frequency } = task.taggedWith;
+      const { frequency, dayOfWeek } = task.taggedWith;
+
+      if (freqTags.includes("weekly") && task.taggedWith.dayOfWeek.size) {
+        return false;
+      }
 
       return !freqTags.some((tag) => frequency.has(tag));
     });
