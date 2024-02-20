@@ -88,10 +88,11 @@ export const frequencyPatterns: {
   daily: { daily: true, day: true },
   weekly: { weekly: true, week: true }, // replace with actual values
   monthly: { monthly: true, month: true }, // replace with actual values
+  quarterly: { quarterly: true, quarter: true }, // replace with actual values
   yearly: { yearly: true, year: true }, // replace with actual values
 };
 
-export type Frequency = "daily" | "weekly" | "monthly" | "yearly";
+export type Frequency = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
 
 export const dayOfWeekPatterns: {
   [key in DayOfWeek]: { [key: string]: true };

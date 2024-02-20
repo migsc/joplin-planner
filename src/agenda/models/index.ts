@@ -2,8 +2,9 @@ import { isEmpty } from "lodash";
 import { Day, DayRange, day } from "../../calendar";
 import * as projects from "./projects";
 import { Project } from "./projects";
-import { DayOfWeek } from "./projects/tag-dicts";
+import { DayOfWeek, Frequency } from "./projects/tag-dicts";
 import { Task } from "./projects/tasks";
+import { QUnitType } from "dayjs";
 export { Project } from "./projects";
 
 export function createSchedule(
@@ -24,19 +25,145 @@ export function createSchedule(
   return schedule;
 }
 
+const dueDatePattern = /@due([^@\n]*)/g;
+
 export function populateSchedule(
   project: Project,
   range: DayRange,
   schedule: ScheduleHash<Task[]>
 ): void {
+  const currentDowNumber = range.start.day();
+
+  console.debug("agenda:models:populateSchedule:enter", {
+    project,
+    range,
+    schedule,
+    currentDowNumber,
+  });
+
   for (const task of project.tasks) {
     const scheduleOfTask: ScheduleHash<Task> = {};
 
-    console.debug(`agenda:models:populateSchedule`, schedule);
-    scheduleTaskByChosenDate(scheduleOfTask, task, range);
-    scheduleTaskByDayOfWeek(scheduleOfTask, task, range);
-    scheduleTaskByFrequency(scheduleOfTask, task, range);
+    // console.debug(`agenda:models:populateSchedule`, schedule);
+    // scheduleTaskByChosenDate(scheduleOfTask, task, range);
+    // scheduleTaskByDayOfWeek(scheduleOfTask, task, range);
+    // scheduleTaskByFrequency(scheduleOfTask, task, range);
 
+    // Find matches in the note body for the due date pattern within the body of the note
+    let match;
+    const taskStartingDates = [];
+    while ((match = dueDatePattern.exec(task.note.body)) !== null) {
+      const matchText = match[1].trim();
+      const parsedDay = day(matchText.trim());
+      console.debug("agenda:models:populateSchedule:parsedDay", {
+        match,
+        matchText,
+        parsedDay,
+        "parsedDay.isValid()": parsedDay.isValid(),
+        task,
+      });
+      if (!parsedDay.isValid()) {
+        continue;
+      }
+
+      if (parsedDay.diff(range.start, "day") < 0) {
+        continue;
+      }
+
+      if (parsedDay.diff(range.end, "day") > 0) {
+        continue;
+      }
+
+      taskStartingDates.push(parsedDay);
+      set(scheduleOfTask, parsedDay, task);
+    }
+
+    // Parse the day of week tags
+    for (const dow of task.taggedWith.dayOfWeek) {
+      const dowNumber = dayOfWeekNumbers[dow];
+      const chosenDayOfWeek = range.start
+        .day(dowNumber)
+        .add(currentDowNumber > dowNumber ? 7 : 0, "days");
+
+      if (chosenDayOfWeek.diff(range.end, "day") <= 0) {
+        set(scheduleOfTask, chosenDayOfWeek, task);
+        taskStartingDates.push(chosenDayOfWeek);
+      }
+    }
+
+    // Parse frequency tags
+    const freq = Array.from(task.taggedWith.frequency)?.[0];
+    if (freq) {
+      // Finally we handle frequency by iteratively incrementing the scheduled dates we already have
+      // const startDates = Object.keys(scheduleOfTask).map((iso) => day(iso));
+      if ("save money" === task.name) {
+        console.debug("agenda:models:populateSchedule:save money", {
+          task,
+          freq,
+          taskStartingDates,
+          range,
+          scheduleOfTask,
+        });
+      }
+
+      if (freq === "yearly" && taskStartingDates.length === 0) {
+        if (range.start.month() === 0 && range.start.date() === 1) {
+          taskStartingDates.push(range.start);
+        } else {
+          taskStartingDates.push(
+            range.start.add(1, "year").startOf("year")
+          );
+        }
+      }
+
+      if (freq === "quarterly" && taskStartingDates.length === 0) {
+        const startOfQuarter = range.start.startOf("quarter")
+        if (range.start.diff(startOfQuarter, "day") === 0) {
+          taskStartingDates.push(range.start);
+        } else {
+          taskStartingDates.push(
+            range.start.add(1, "quarter").startOf("quarter")
+          );
+        }
+      }
+
+      if (freq === "monthly" && taskStartingDates.length === 0) {
+        if (range.start.date() === 1) {
+          taskStartingDates.push(range.start);
+        } else {
+          taskStartingDates.push(
+            range.start.startOf("month").add(1, "month").startOf("month")
+          );
+        }
+      }
+
+      if (freq === "weekly" && taskStartingDates.length === 0) {
+        if (range.start.startOf("week").diff(range.start, "day") === 0) {
+          taskStartingDates.push(range.start);
+        } else if (
+          range.start.add(1, "week").startOf("week").diff(range.end, "day") <= 0
+        ) {
+          taskStartingDates.push(range.start.add(1, "week").startOf("week"));
+        }
+      }
+
+      if (freq === "daily" && taskStartingDates.length === 0) {
+        taskStartingDates.push(range.start);
+      }
+
+      for (const date of taskStartingDates) {
+        set(scheduleOfTask, date, task);
+        let currentDate = date.startOf("day");
+
+        while (currentDate.diff(range.end) <= 0) {
+          const unit = freqUnitDict[freq] as QUnitType; // TODO we have to patch moment's QUnitType somehow to allow 'week'
+          currentDate = currentDate.add(1, unit);
+          set(scheduleOfTask, currentDate, task);
+        }
+      }
+    }
+
+    // ....
     for (const key in scheduleOfTask) {
       if (schedule[key]) {
         schedule[key].data.push(scheduleOfTask[key].data);
@@ -50,134 +177,17 @@ export function populateSchedule(
   }
 
   for (const subProject of project.projects) {
-    console.debug(
-      `agenda:models:populateSchedule:${
-        subProject.name
-      }: Populating schedule with sub project tasks and date range from ${range.start.format(
-        "MM/DD/YYYY"
-      )} to ${range.end.format("MM/DD/YYYY")}...`
-    );
     populateSchedule(subProject, range, schedule);
   }
 }
 
-export function scheduleTaskByChosenDate(
-  scheduledDates: ScheduleHash<Task>,
-  task: Task,
-  range: DayRange
-): ScheduleHash<Task> {
-  task.note;
-
-  for (const tag of task.note.tags) {
-    const parsedDay = day(tag.title);
-    if (!parsedDay.isValid()) continue;
-    let chosenDate = parsedDay.startOf("day");
-
-    // If we've already passed the chosen date, we'll schedule it for next year
-    if (chosenDate && chosenDate.diff(range.start, "day") <= 0) {
-      chosenDate = chosenDate.add(1, "year");
-    }
-
-    // Finally, we'll check if that date is within our date limit and then add the task to the schedule
-    if (chosenDate && chosenDate.diff(range.end, "day") <= 0) {
-      set(scheduledDates, chosenDate, task);
-    }
-  }
-
-  return scheduledDates;
-}
-
-export function scheduleTaskByDayOfWeek(
-  scheduledDates: ScheduleHash<Task>,
-  task: Task,
-  range: DayRange
-): ScheduleHash<Task> {
-  const { dayOfWeek } = task.taggedWith;
-
-  if (!dayOfWeek.size) {
-    return;
-  }
-  const currentDowNumber = range.start.day();
-
-  for (const dow of dayOfWeek) {
-    const dowNumber = dayOfWeekNumbers[dow];
-    let chosenDayOfWeek: Day;
-
-    if (currentDowNumber <= dowNumber) {
-      chosenDayOfWeek = range.start.day(dowNumber);
-    } else if (currentDowNumber > dowNumber) {
-      chosenDayOfWeek = range.start.day(dowNumber).add(7, "days");
-    }
-
-    if (chosenDayOfWeek.diff(range.end, "day") <= 0) {
-      console.debug(
-        "agenda:models:scheduleTaskByDayOfWeek: Setting scheduled date for task: ",
-        {
-          task,
-          chosenDayOfWeek,
-        }
-      );
-      set(scheduledDates, chosenDayOfWeek, task);
-    }
-  }
-
-  return scheduledDates;
-}
-
-export function scheduleTaskByFrequency(
-  scheduledDates: ScheduleHash<Task>,
-  task: Task,
-  range: DayRange
-): ScheduleHash<Task> {
-  // We choose only the first frequency tag
-  const freq = Array.from(task.taggedWith.frequency)?.[0];
-
-  if (!freq) return scheduledDates;
-
-  // If we haven't yet scheduled this task but we still have a frequency tag, then we'll use the created
-  // date of the note to schedule the task
-  if (isEmpty(scheduledDates)) {
-    const createdDate = day(task.note.created_time);
-    if (createdDate.diff(range.end, "day") <= 0) {
-      set(scheduledDates, createdDate, task);
-    }
-  }
-
-  // Finally we handle frequency by iteratively incrementing the scheduled dates we already have
-  const startDates = Object.keys(scheduledDates).map((iso) => day(iso));
-  for (const date of startDates) {
-    let currentDate = date.startOf("day");
-
-    switch (freq) {
-      case "daily":
-        while (currentDate.diff(range.end) <= 0) {
-          currentDate = currentDate.add(1, "day");
-          set(scheduledDates, currentDate, task);
-        }
-        break;
-      case "weekly":
-        while (currentDate.diff(range.end) <= 0) {
-          currentDate = currentDate.add(7, "days");
-          set(scheduledDates, currentDate, task);
-        }
-        break;
-      case "monthly":
-        while (currentDate.diff(range.end) <= 0) {
-          currentDate = currentDate.add(1, "month");
-          set(scheduledDates, currentDate, task);
-        }
-        break;
-      case "yearly":
-        while (currentDate.diff(range.end) <= 0) {
-          currentDate = currentDate.add(1, "year");
-          set(scheduledDates, currentDate, task);
-        }
-        break;
-    }
-  }
-
-  return scheduledDates;
-}
+const freqUnitDict: { [key in Frequency]: QUnitType | "week" } = {
+  daily: "day",
+  weekly: "week",
+  monthly: "month",
+  quarterly: "quarter",
+  yearly: "year",
+};
 
 function set(scheduledDates: ScheduleHash<Task>, day: Day, task: Task): void {
   const key = day.format("YYYY-MM-DD");

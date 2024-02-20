@@ -1,6 +1,7 @@
 import joplin from "api";
 import data from "./data";
 import main from "./main";
+import { updateLocales } from "./calendar/models/day";
 
 joplin.plugins.register({
   onStart: async () => {
@@ -13,6 +14,8 @@ joplin.plugins.register({
 
       await joplin.settings.registerSettings(data.settings.options);
 
+      await handleSettingsUpdate();
+
       console.debug("joplin.plugins.register:onStart: Settings registered!");
       console.debug("joplin.plugins.register:onStart: Running main module...");
       await main();
@@ -23,3 +26,14 @@ joplin.plugins.register({
   },
 });
 
+joplin.settings.onChange(handleSettingsUpdate);
+
+async function handleSettingsUpdate() {
+  const firstDayOfWeek = await joplin.settings.value("firstDayOfWeek");
+
+  if (firstDayOfWeek === "Sunday") {
+    updateLocales({ weekStartsOn: 0 });
+  } else if (firstDayOfWeek === "Monday") {
+    updateLocales({ weekStartsOn: 1 });
+  }
+}

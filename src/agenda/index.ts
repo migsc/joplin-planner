@@ -15,10 +15,26 @@ let rootFolder: Folder,
 
 export async function loadAgenda(): Promise<Agenda> {
   console.debug("agenda:loadAgenda: Loading agenda...");
+
+  const firstTime = !(await data.settings.get("rootFolderID"));
+
   rootFolder = await data.folders.getOrCreateByKey(
     "rootFolderID",
-    initializeRootFolder
+    initializeRootFolder,
+    { notes: true }
   );
+
+  if (firstTime) {
+    const body = require("../../README.md").default;
+
+    console.log(body);
+
+    await data.notes.create({
+      parent_id: rootFolder.id,
+      title: "Welcome to Joplin Planner",
+      body,
+    });
+  }
   console.debug("agenda:loadAgenda: Loaded root folder: ", rootFolder);
 
   const [upcomingAgenda, currentAgenda, pastAgenda] = await Promise.all([
